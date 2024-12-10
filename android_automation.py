@@ -234,21 +234,52 @@ def main(app_folder):
 def add_dependencies_method_1(build_gradle_file):
     """
     Adds dependencies using method 1 (directly specifying versions) in the build.gradle file.
+    Prompts for confirmation before adding each dependency.
     """
     dependencies = [
-        "implementation 'com.github.bumptech.glide:glide:4.16.0'",
-        "implementation 'com.google.dagger:hilt-android:2.51.1'",
-        "implementation 'com.google.dagger:hilt-android-compiler:2.51.1'"
+        "\t// Glide\n    implementation(\"com.github.bumptech.glide:glide:4.16.0\")\n",
+        "\t// Lifecycle\n    implementation(\"androidx.lifecycle:lifecycle-runtime-ktx:2.6.1\")\n",
+        "    implementation(\"androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.1\")\n",
+        "\t// Hilt\n    implementation(\"com.google.dagger:hilt-android:2.51.1\")\n",
+        "    kapt(\"com.google.dagger:hilt-compiler:2.51.1\")\n",
+        "\t// Retrofit & OkHttp\n    implementation(\"com.squareup.retrofit2:retrofit:2.9.0\")\n",
+        "    implementation(\"com.squareup.okhttp3:okhttp:4.11.0\")\n",
+        "\t// Room\n    implementation(\"androidx.room:room-runtime:2.6.0\")\n",
+        "    kapt(\"androidx.room:room-compiler:2.6.0\")\n",
+        "\t// Coroutine support\n    implementation(\"org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3\")\n"
     ]
-    
+
     try:
-        with open(build_gradle_file, "a") as file:
-            file.write("\n// Added dependencies using Method 1\n")
-            for dep in dependencies:
-                file.write(f"{dep}\n")
-        print("Dependencies added using Method 1 in build.gradle.")
+        with open(build_gradle_file, "r") as file:
+            lines = file.readlines()
+
+        # Find the dependencies block
+        with open(build_gradle_file, "w") as file:
+            inside_dependencies = False
+            for line in lines:
+                stripped_line = line.strip()
+
+                # Check for the start of the dependencies block
+                if stripped_line == "dependencies {":
+                    inside_dependencies = True
+                    file.write(line)  # Write the current line
+                    # Prompt for each dependency
+                    for dep in dependencies:
+                        add_dependency = input(f"Do you want to add:\n{dep} (yes/no)? ").strip().lower()
+                        if add_dependency in ['yes', 'y']:
+                            file.write(f"{dep}\n")  # Write the dependency with proper formatting
+                    continue
+
+                # Check for the end of the dependencies block
+                if inside_dependencies and stripped_line == "}":
+                    inside_dependencies = False
+
+                file.write(line)  # Write the line as is
+
+        print("Dependencies successfully appended to the dependencies block where confirmed.")
     except Exception as e:
         print(f"Error adding dependencies in build.gradle: {e}")
+
 
 
 def add_dependencies_method_2(libs_versions_toml_file):
@@ -302,16 +333,16 @@ if __name__ == "__main__":
 
                 main(app_folder)
 
-                build_gradle_file = os.path.join(app_folder, "app", "build.gradle")
+                build_gradle_file = os.path.join(app_folder, "app", "build.gradle.kts")
                 libs_versions_toml_file = os.path.join(app_folder, "gradle", "libs.versions.toml")
 
                 # Check if libs.versions.toml exists
-                if os.path.exists(libs_versions_toml_file):
-                    print("libs.versions.toml found. Using Method 2.")
-                    add_dependencies_method_2(libs_versions_toml_file)
-                else:
-                    print("libs.versions.toml not found. Using Method 1.")
-                    add_dependencies_method_1(build_gradle_file)
+                # if os.path.exists(libs_versions_toml_file):
+                #     print("libs.versions.toml found. Using Method 2.")
+                #     add_dependencies_method_2(libs_versions_toml_file)
+                # else:
+                print("libs.versions.toml not found. Using Method 1.")
+                add_dependencies_method_1(build_gradle_file)
 
             else:
                 print("Confirmation declined.")
